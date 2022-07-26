@@ -37,8 +37,8 @@ NC='\033[0m' # No Color
 MG='\033[0;35m' # Purple
 CY='\033[0;36m' # Cyan
 YL='\033[1;33m' # Yellow
-SH_REPO_URL="${CY}coming soon$NC"
-VERSION="1.0.0"
+SH_REPO_URL="${CY}https://github.com/akippnn/aurutilsinstaller$NC"
+VERSION="1.0.1"
 PREFIX="${YL}[aurutilsinstaller $VERSION]$NC"
 PKG="${MG}aurutils$NC"
 PKG_URL="${CY}https://aur.archlinux.org/packages/aurutils$NC"
@@ -129,7 +129,7 @@ sudo pacman -Syu
 __pacmanconf="
 \n[$REPO_NAME]
 \nSigLevel = Optional TrustAll
-\nServer = file:/$REPO_DIR"
+\nServer = file://$REPO_DIR"
 
 __pathwithbackslash=sed 's#/#\\/#g' $REPO_DIR
 
