@@ -40,7 +40,7 @@ MG='\033[0;35m' # Purple
 CY='\033[0;36m' # Cyan
 YL='\033[1;33m' # Yellow
 sh_repo_url="${CY}https://github.com/akippnn/aurutilsinstaller$NC"
-version="2.1"
+version="2.1.1"
 prefix="${YL}[aurutilsinstaller ver. $version]$NC"
 pkg="${MG}aurutils$NC"
 pkg_url="${CY}https://aur.archlinux.org/packages/aurutils$NC"
@@ -60,7 +60,9 @@ __aurremove="#!/bin/sh --
 	\npaccache -c \"\${repo_path%/*}\" -rvk0 \"\$@\"
 	\ndone"
 
-exe() { echo -e "${YL}\$${NC} ${@/eval/}" ; "$@" ; } # Function from https://stackoverflow.com/a/23342259
+## Function from https://stackoverflow.com/a/23342259
+# shellcheck disable=2145
+exe() { echo -e "${YL}\$${NC} ${@/eval/}" ; "$@" ; } 
 
 __nonfresh="$prefix Warning: Do not use this script if you have a working aurutils install.
 	\nAs for now, this script is only meant to be deployed on fresh systems with no trace of $pkg.
@@ -125,6 +127,7 @@ fi
 
 # shellcheck disable=2164
 exe git clone $git_url && cd "$(basename "$_" .git)" || nonfresh || cd aurutils || exit
+# shellcheck disable=2143
 if [[ $(grep -Fx 'pkgname=aurutils' PKGBUILD) ]] ; then
 	exe makepkg -si --noconfirm
 else
@@ -147,10 +150,10 @@ __pacmanconf="
 \nServer = file://$REPO_DIR"
 
 echo -e "\n$prefix Installation finished. What else would you like to do?"
-__options="1) Add an existing built package in the repository (untested this version)
+__options="1) Add an existing built package in the repository (useful for GUI users)
 \n2) Sync vifm package and set vicmd (required to view build files)
 \n3) Add repository $REPO_NAME to /etc/pacman.conf automatically
-\n4) Install aur-remove script (script from ${CY}man aur${NC})
+\n4) Install aur-remove script (script taken from ${CY}man aur${NC})
 \n5) Setup CacheDir and CleanMethod automatically (untested: may not add $REPO_NAME repository in CacheDir)
 \n6) Quit"
 
@@ -159,20 +162,22 @@ while true ; do
 	echo -e $__options
 	read -rp '#? ' input
 	case $input in
-		1 ) IFS=' ' read -rp "Drag and drop .pkg files (or type in their paths) and press enter\n> " ARRAY
+		1 ) echo "Drag and drop .pkg files in this terminal (if you have a GUI file manager) or type in file paths manually and press enter"
+		    IFS=' ' read -rp "> " -a ARRAY;
 		    for i in "${ARRAY[@]}" ; do
-		        exe mv "$i" "$REPO_DIR"
-			exe repo-add -n "$REPO_NAME".db.tar.gz "$i"
-		    done
+		        exe mv "$i" "$REPO_DIR";
+			exe repo-add -n "$REPO_NAME".db.tar.gz "$REPO_DIR"/$(basename "$i");
+		    done;
+		    exe sudo pacman -Syu;;
 		    
-		2 ) sudo pacman -S vifm; 
+		2 ) exe sudo pacman -S vifm; 
 		    read -rp "Set vicmd (leave blank to cancel): " VICMD;
 		    if [ -n "$VICMD" ] ; then	
 			    if ! [[ $(command -v "$VICMD") ]]  ; then
 				    echo "$VICMD is not a command.";
 				    continue;
 			    fi;
-			    exe sudo sed -i "s/set vicmd=.*/set vicmd=$VICMD/" ${XDG_CONFIG_HOME:-~/.config}/vifm/vifmrc;
+			    exe sudo sed -i "s/set vicmd=.*/set vicmd=$VICMD/" "${XDG_CONFIG_HOME:-~/.config}"/vifm/vifmrc;
 		    fi;;
 
 		3 ) # shellcheck disable=2086
