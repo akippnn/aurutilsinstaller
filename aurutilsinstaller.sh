@@ -121,9 +121,12 @@ exe repo-add "$REPO_DIR"/"$REPO_NAME".db.tar.gz
 ## INSTALL
 echo -e "$prefix Installing aurutils and its' dependencies"
 ## Git is a required to clone and is a dependency of aurutils (see pkg_url).
-if ! [[ $(pacman -Qi git 1> /dev/null) ]] ; then
-	exe sudo pacman -S git --asdeps --noconfirm
-fi
+packages=('base-devel' 'git')
+for package in "$packages" ; do
+	if ! [[ $(exe pacman -Qi "$package" 1> /dev/null) ]] ; then
+		exe sudo pacman -S "$package" --asdeps --noconfirm
+	fi
+done
 
 # shellcheck disable=2164
 exe git clone $git_url && cd "$(basename "$_" .git)" || nonfresh || cd aurutils || exit
