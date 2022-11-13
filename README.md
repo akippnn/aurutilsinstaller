@@ -2,7 +2,9 @@
 
 ### Note
 
-As of now, 
+As of now, I will make changes in the experimental branch. I may make some needed changes in there but unfortunately I won't be able to test if it works; I currently do not have a testing environment to confirm whether it works or not.
+
+Also, please read text warnings carefully. The script as of now is not in a 100% working state.
 
 ### Description
 
