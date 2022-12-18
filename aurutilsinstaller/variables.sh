@@ -1,0 +1,11 @@
+A_NC='\033[0m' # No Color
+A_MG='\033[0;35m' # Purple
+A_CY='\033[0;36m' # Cyan
+A_YL='\033[1;33m' # Yellow
+sh_repo_url="https://github.com/akippnn/aurutilsinstaller"
+version="2.1.1"
+prefix="${A_YL}[aurutilsinstaller ver. $version]${A_NC}"
+pkg="${A_MG}aurutils${A_NC}"
+pkg_url="https://aur.archlinux.org/packages/aurutils"
+git_url="https://aur.archlinux.org/aurutils.git"
+packages=('base-devel' 'git')

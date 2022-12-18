@@ -18,7 +18,7 @@ This is also great for beginners that are just getting started to Arch Linux. Sh
 
 ### Usage
 ##### If you're an experienced user
-All you need to do is run the `aurutilsinstaller.sh` script.
+All you need to do is run the `start.sh` script.
 
 ##### For beginners
 Clone this repository

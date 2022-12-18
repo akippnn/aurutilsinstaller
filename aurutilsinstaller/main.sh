@@ -1,74 +1,18 @@
 #!/bin/bash
 
-# ------------
-# MIT License
-#
-# Copyright (c) 2022 https://github.com/akippnn
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-# ------------
-
-# Check if fresh install variable was passed
-if [ -z ${REQ_FRESH_INSTALL+x} ] ; then
-	REQ_FRESH_INSTALL=true
-elif [ "${REQ_FRESH_INSTALL^^}" = true ] || [ "${REQ_FRESH_INSTALL^^}" = false ] ; then
-	echo "REQ_FRESH_INSTALL only accepts true or false values"
-	exit
-fi
-
-
-## INIT
-
-NC='\033[0m' # No Color
-MG='\033[0;35m' # Purple
-CY='\033[0;36m' # Cyan
-YL='\033[1;33m' # Yellow
-sh_repo_url="${CY}https://github.com/akippnn/aurutilsinstaller$NC"
-version="2.1.1"
-prefix="${YL}[aurutilsinstaller ver. $version]$NC"
-pkg="${MG}aurutils$NC"
-pkg_url="${CY}https://aur.archlinux.org/packages/aurutils$NC"
-git_url="https://aur.archlinux.org/aurutils.git"
-
-# shellcheck disable=2089
-__aurremove="#!/bin/sh --
-	\n# aur-remove - remove listed packages from all local repositories
-	\n
-	\nif [ \"\$#\" -eq 0 ]; then
-	\n	printf 'usage: aur remove package [package ...]\\\n' >&2
-	\n	exit 1
-	\nfi
-	\n
-	\naur repo --list-path | while read -r repo_path; do
-	\nrepo-remove \"\$repo_path\" \"\$@\"
-	\npaccache -c \"\${repo_path%/*}\" -rvk0 \"\$@\"
-	\ndone"
+source variables.sh
 
 ## Function from https://stackoverflow.com/a/23342259
 # shellcheck disable=2145
-exe() { echo -e "${YL}\$${NC} ${@/eval/}" ; "$@" ; } 
+function exe() { echo -e "${A_YL}\$${A_NC} ${@/eval/}" ; "$@" ; } 
+
+# shellcheck disable=2089
 
 __nonfresh="$prefix Warning: Do not use this script if you have a working aurutils install.
 	\nAs for now, this script is only meant to be deployed on fresh systems with no trace of $pkg.
 	\nPass the variable REQ_FRESH_INSTALL as false (case-insensitive) to ignore this warning.\n"
 
-nonfresh () {
+function nonfresh () {
         if [ "$REQ_FRESH_INSTALL" = true ] ; then
                 # shellcheck disable=2086
                 echo -e $__nonfresh
@@ -87,12 +31,11 @@ elif [[ $(pacman -Qi aurutils &> /dev/null) ]] ; then
 fi
 
 
-
 ## INTRO
 
 __intro="$prefix This script will download and install the package $pkg ($pkg_url) from the AUR.
 	\nIt is recommended to deploy this only on fresh systems with no trace of $pkg.
-	\nPlease see $sh_repo_url and $pkg_url for more details.\n"
+	\nPlease see ${A_CY}${sh_repo_url}${A_NC} and ${A_CY}$pkg_url${A_NC} for more details.\n"
 # shellcheck disable=2086
 echo -e $__intro
 select input in "Download and Install" "Cancel" ; do
@@ -121,7 +64,6 @@ exe repo-add "$REPO_DIR"/"$REPO_NAME".db.tar.gz
 ## INSTALL
 echo -e "$prefix Installing aurutils and its' dependencies"
 ## Git is a required to clone and is a dependency of aurutils (see pkg_url).
-packages=('base-devel' 'git')
 for package in "$packages" ; do
 	if ! [[ $(exe pacman -Qi "$package" 1> /dev/null) ]] ; then
 		exe sudo pacman -S "$package" --asdeps --noconfirm
@@ -156,11 +98,11 @@ echo -e "\n$prefix Installation finished. What else would you like to do?"
 __options="1) Add an existing built package in the repository (useful for GUI users)
 \n2) Sync vifm package and set vicmd (required to view build files)
 \n3) Add repository $REPO_NAME to /etc/pacman.conf automatically
-\n4) Install aur-remove script (script taken from ${CY}man aur${NC})
+\n4) Install aur-remove script (script taken from ${A_CY}man aur${A_NC})
 \n5) Setup CacheDir and CleanMethod automatically (untested: may not add $REPO_NAME repository in CacheDir)
 \n6) Quit"
 
-while true ; do
+while true; do
         # shellcheck disable=2086
 	echo -e $__options
 	read -rp '#? ' input
