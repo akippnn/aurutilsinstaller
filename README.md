@@ -8,7 +8,7 @@ Also, please read text warnings carefully. The script as of now is not in a 100%
 
 ### Description
 
-A single shell script to deploy Aurutils scripts in a human-readable way for Arch systems. 
+A shell script to deploy Aurutils scripts in a human-readable way for Arch systems. 
 
 This is not a substitute to manually installing aurutils for the first time, though it can be used as such but there are other more convenient and straightforward to set-up wrappers that abstract AUR installation.<sup>[[wiki: AUR helpers](https://wiki.archlinux.org/title/AUR_helpers)]</sup> Rather the purpose of this script is for deployment purposes; for technicians that prefer the usage of aurutils for fresh Arch installations and make more use out of the commands that already exist in the system, such as `pacman`.
 

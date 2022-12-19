@@ -1,152 +1,43 @@
 #!/bin/bash
-
 source variables.sh
 
-## Function from https://stackoverflow.com/a/23342259
-# shellcheck disable=2145
-function exe() { echo -e "${A_YL}\$${A_NC} ${@/eval/}" ; "$@" ; } 
-
-# shellcheck disable=2089
-
-__nonfresh="$prefix Warning: Do not use this script if you have a working aurutils install.
-	\nAs for now, this script is only meant to be deployed on fresh systems with no trace of $pkg.
-	\nPass the variable REQ_FRESH_INSTALL as false (case-insensitive) to ignore this warning.\n"
-
-function nonfresh () {
-        if [ "$REQ_FRESH_INSTALL" = true ] ; then
-                # shellcheck disable=2086
-                echo -e $__nonfresh
-                exit
-        fi
-	return 1
+exe() {
+  # Echos the command used, https://stackoverflow.com/a/23342259
+  # Note: Uses eval, please use sparingly and make sure commands are sanitized.
+  if ! [[ ${*[0]} == "echo"]]; then {
+    echo -e "${A_YL}\$${A_NC} $@"; 
+    eval "$@";
+  } fi
 }
 
-## Checks if the script is run in root
-if ! [ "$EUID" -ne 0 ] ; then
-	echo -e "$prefix Please do not run this script as root.\n"
-	exit
-## Checks if aurutils is in pacman
-elif [[ $(pacman -Qi aurutils &> /dev/null) ]] ; then 
-	nonfresh
-fi
+main() {
+  if [[ "$(whoami)" == "root" ]]; then {
+    echo -e "$prefix Please do not run this script as root.\n"
+    exit
+  elif [[ $(pacman -Qi aurutils &> /dev/null) ]]; then
+    nonfresh
+  } fi
 
+  echo -e "
+    ${A_YL}aurutilsinstaller ${A_CY}${version}${A_NY}
+    A shell script to deploy aurutils scripts for Arch Linux systems
+  "
 
-## INTRO
+  options=(
+    "Setup aurutils and dependencies (git, vifm/vicmd)"
+    "Scripts (aur-remove, aur-gc, ...)"
+    "Repository management"
+    "Quit"
+    )
+  ### wip section
+  select input in $options; do {
+    case ${input} in
+      "Setup aurutils and dependencies (git, vifm.vicmd)" ) 
+        break;;
+      *)
+        echo "Please select properly"
+    esac
+  } done
+}
 
-__intro="$prefix This script will download and install the package $pkg ($pkg_url) from the AUR.
-	\nIt is recommended to deploy this only on fresh systems with no trace of $pkg.
-	\nPlease see ${A_CY}${sh_repo_url}${A_NC} and ${A_CY}$pkg_url${A_NC} for more details.\n"
-# shellcheck disable=2086
-echo -e $__intro
-select input in "Download and Install" "Cancel" ; do
-	case $input in
-		"Download and Install" ) break;;
-		"Cancel" ) exit;;
-	esac
-done
-
-## Set up the repository
-echo -e "\n$prefix Please answer the following:"
-read -rp 'Enter your new repository name [default: custompkgs]: ' REPO_NAME
-read -rp 'Where to place the repository [default: /home/custompkgs]: ' REPO_DIR
-REPO_NAME=${REPO_NAME:-custompkgs} # Would rather use parameter expansion instead of readline to input easily
-REPO_DIR=${REPO_DIR:-/home/custompkgs}
-
-echo -e "\nPlease pay attention to the terminal until the script is finished, it shouldn't take a while.\nAssuming you did not modify timestamp_timeout, password should mostly be asked once only."
-exe sudo install -d "$REPO_DIR" -o "$USER"
-if ! [ -d "$REPO_DIR" ] ; then
-	echo -e "$prefix The repository directory the script was supposed to create does not exist. Please give a proper directory path."
-	exit
-fi
-exe repo-add "$REPO_DIR"/"$REPO_NAME".db.tar.gz
-
-
-## INSTALL
-echo -e "$prefix Installing aurutils and its' dependencies"
-## Git is a required to clone and is a dependency of aurutils (see pkg_url).
-for package in "$packages" ; do
-	if ! [[ $(exe pacman -Qi "$package" 1> /dev/null) ]] ; then
-		exe sudo pacman -S "$package" --asdeps --noconfirm
-	fi
-done
-
-# shellcheck disable=2164
-exe git clone $git_url && cd "$(basename "$_" .git)" || nonfresh || cd aurutils || exit
-# shellcheck disable=2143
-if [[ $(grep -Fx 'pkgname=aurutils' PKGBUILD) ]] ; then
-	exe makepkg -si --noconfirm
-else
-	echo -e "$prefix Not sure what is going on here. You may want to troubleshoot."
-	exit
-fi
-
-echo -e "$prefix Adding aurutils to repository"
-
-exe mv aurutils*.pkg.tar* "$REPO_DIR"
-exe repo-add -n "$REPO_NAME".db.tar.gz aurutils*.pkg.tar*
-exe sudo pacman -Syu
-
-
-## CONFIGURE
-
-__pacmanconf="
-\n[$REPO_NAME]
-\nSigLevel = Optional TrustAll
-\nServer = file://$REPO_DIR"
-
-echo -e "\n$prefix Installation finished. What else would you like to do?"
-__options="1) Add an existing built package in the repository (useful for GUI users)
-\n2) Sync vifm package and set vicmd (required to view build files)
-\n3) Add repository $REPO_NAME to /etc/pacman.conf automatically
-\n4) Install aur-remove script (script taken from ${A_CY}man aur${A_NC})
-\n5) Setup CacheDir and CleanMethod automatically (untested: may not add $REPO_NAME repository in CacheDir)
-\n6) Quit"
-
-while true; do
-        # shellcheck disable=2086
-	echo -e $__options
-	read -rp '#? ' input
-	case $input in
-		1 ) echo "Drag and drop .pkg files in this terminal (if you have a GUI file manager) or type in file paths manually and press enter"
-		    IFS=' ' read -rp "> " -a ARRAY;
-		    for i in "${ARRAY[@]}" ; do
-		        exe mv "$i" "$REPO_DIR";
-			exe repo-add -n "$REPO_NAME".db.tar.gz "$REPO_DIR"/$(basename "$i");
-		    done;
-		    exe sudo pacman -Syu;;
-		    
-		2 ) exe sudo pacman -S vifm; 
-		    read -rp "Set vicmd (leave blank to cancel): " VICMD;
-		    if [ -n "$VICMD" ] ; then	
-			    if ! [[ $(command -v "$VICMD") ]]  ; then
-				    echo "$VICMD is not a command.";
-				    continue;
-			    fi;
-			    exe sudo sed -i "s/set vicmd=.*/set vicmd=$VICMD/" "${XDG_CONFIG_HOME:-~/.config}"/vifm/vifmrc;
-		    fi;;
-
-		3 ) # shellcheck disable=2086
-		    exe echo -e $__pacmanconf | sudo tee -a /etc/pacman.conf;
-		    exe sudo pacman -Syu;
-		    echo "Done.";;
-		    
-		4 ) read -rp "Path to install the script [default: /usr/local/bin]" SCRIPT_DIR;
-		    SCRIPT_DIR=${SCRIPT_DIR:-/usr/local/bin};
-		    if [ -d "$SCRIPT_DIR" ] ; then
-		            # shellcheck disable=2086,2090
-			    exe echo -e $__aurremove | sudo tee "$SCRIPT_DIR"/aur-remove;
-			    exe chmod +x "$SCRIPT_DIR"/aur-remove;
-			    echo "Done.";
-		    else
-			    echo "$SCRIPT_DIR is not a directory.";
-		    fi;;
-
-		5 ) exe sudo sed -i "/^#CacheDir/s/$/ \"$REPO_DIR\"/" /etc/pacman.conf;
-		    exe sudo sed -i "s/CleanMethod =.*/CleanMethod = KeepCurrent/" /etc/pacman.conf;
-		    exe sudo sed -i "/\(CacheDir\|CleanMethod\)/s/^#//g" /etc/pacman.conf;
-		    echo "Done.";;
-
-	    	6 ) exe echo -e "$prefix Goodbye <3.";
-		    break;;
-	esac
-done
+main
