@@ -1,0 +1,13 @@
+{
+  "color" : {
+    "reset"   : "\033[0m",
+    "magenta" : "\033[0;35m",
+    "cyan"    : "\033[0;36m",
+    "yellow"  : "\033[1;33m"
+  },
+  "sh_repo_url" : "https://github.com/akippnn/aurutilsinstaller",
+  "version"     : "3",
+  "pkg_url"     : "https://aur.archlinux.org/packages/aurutils",
+  "git_url"     : "https://aur.archlinux.org/aurutils.git",
+  "depends"     : ["base-devel", "git"]
+}
