@@ -1,0 +1,12 @@
+[submodule "deps/ncurses"]
+	path = deps/ncurses
+	url = https://gitlab.archlinux.org/archlinux/packaging/packages/ncurses
+[submodule "deps/dialog"]
+	path = deps/dialog
+	url = https://gitlab.archlinux.org/archlinux/packaging/packages/dialog
+[submodule "deps/aurutils"]
+	path = deps/aurutils
+	url = https://aur.archlinux.org/aurutils.git
+[submodule "aurutils"]
+	path = aurutils
+	url = https://aur.archlinux.org/aurutils.git
