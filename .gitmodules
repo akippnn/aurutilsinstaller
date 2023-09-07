@@ -1,9 +1,9 @@
 [submodule "deps/ncurses"]
-	path = deps/ncurses
+	path = pkgs/ncurses
 	url = https://gitlab.archlinux.org/archlinux/packaging/packages/ncurses
 [submodule "deps/dialog"]
-	path = deps/dialog
+	path = pkgs/dialog
 	url = https://gitlab.archlinux.org/archlinux/packaging/packages/dialog
 [submodule "deps/aurutils"]
-	path = deps/aurutils
+	path = pkgs/aurutils
 	url = https://aur.archlinux.org/aurutils.git
