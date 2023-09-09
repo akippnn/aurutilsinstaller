@@ -1,92 +1,109 @@
 #!/bin/bash
 
-source "$PWD/aurutilsinstaller/ui.sh";
+source "$PWD/aurutilsinstaller/parser.sh";
+source "$PWD/aurutilsinstaller/interface.sh";
 
 LINES=$(tput lines);
 COLUMNS=$(tput cols);
-TITLE='aurutilsinstaller';
+INSTALLER_TITLE='aurutilsinstaller';
+START_DIR="$PWD"
 DEFAULT_UI='dialog';
 
 trace() {
-	((tracenum++)); gum style --bold --margin="1 1" "Trace $tracenum";
+	((trace_num++));
+	gum style --bold --margin="1 1" "Trace $trace_num";
 	read;
 }
 
-fetch() {
-	# $1 string: fetch files from this folder
-	
-	local -n arr=$1 && shift || return 1;
-	for file in "$PWD"/aurutilsinstaller/$1/*; do
-		arr+=("$file")
+fetch_files() {
+	local -n file_arr=$1 || return 1;
+	for file in "$START_DIR"/aurutilsinstaller/$2/*; do
+		file_arr+=("$file")
 	done
+	trace
 }
 
 fetch_scripts() {
-	local -n scripts=$1 && shift || return 1;
-	local files=();
-	fetch files "scripts";
-	for file in ${files[@]}; do
-		lines=();
-		count=0;
+	local -n script_arr=$1 && shift || return 1;
+	local -a return_file_arr;
+	fetch_files return_file_arr "scripts";
+	for file in ${return_file_arr[@]}; do
+		local parsed;
+		local -a lines;
+		local -i count=0;
 		while IFS= read -r line; do
 			if [[ "$line" =~ "#% "* ]]; then
 				line=${line#"#% "};
 				lines+=("$line");
-				((count++));
-				((count == 2)) && break;
 			fi
 		done < "$file"
-		scripts+=("$(basename "$file" .sh)" "${lines[0]}: ${lines[1]}");
+		# Function of parser.sh used here
+		parse parsed 'desc' "${lines[@]}"
+		echo "${parsed}"
+		script_arr+=("$(basename "$file" .sh)" "${parsed}")
 	done
 } 
 
-init() {
-	# $1 string: use this ui
-	
-	#local interfaces=();
-	local items=();
-	local use_script=();
+install() {
+	local -a items;
+	local -a run;
 
-	#fetch_ui interfaces;
 	fetch_scripts items;
 
-	checklist use_script "$1" "$TITLE" "${items[@]}";
-	for script in "${use_script[@]}"; do
-		NOTES=();
-		source "$PWD/aurutilsinstaller/scripts/$script.sh";
-		if ! [ -z "$NOTES" ]; then
-			for note in "${NOTES[@]}"; do
-				local n;
-				((n++))
-				if ! $(confirm "$1" "$script.sh" "Note $n: \n$note"); then
-					printf '%s' "Cancelled";
-					kill;
-				fi
-			done
-		fi
+	# Functions of interface.sh used here
+	multiselect run "$1" "$INSTALLER_TITLE" "${items[@]}";
+	if [ -z "$run" ]; then
+		printf "Script to run not returned by %s." "$1";
+		return 1;
+	fi
+
+	for script in "${run}"; do
+		warnings=();
+		source "$START_DIR/aurutilsinstaller/scripts/$script.sh";
+		init;
+		warnings+=("${NOTES[@]}");
 	done;
 
-	unset main;
-	unset NOTES;
-
-	for script in "${use_script[@]}"; do
-		clear;
-		source "$PWD/aurutilsinstaller/scripts/$script.sh";
-		printf '\033[1m%s\033[0m\n' "$PWD/aurutilsinstaller/scripts/$script.sh";
-		main;
-
-		unset main;
+	for warning in "${warnings[@]}"; do
+		if ! $(confirm "$1" "$script.sh" "\n$warning"); then
+			printf "Operation cancelled by user.";
+			return 1;
+		fi
 	done
+	clear;
+
+	for script in "${run[@]}"; do
+		source "$START_DIR/aurutilsinstaller/scripts/$script.sh";
+		printf '\033[1m%s\033[0m\n' "$START_DIR/aurutilsinstaller/scripts/$script.sh";
+		main;
+		cd $START_DIR;
+	done
+
+	printf "Job finished.";
+	return 0;
 }
 
-args=();
+menu() {
+	/dev/null
+}
 
-while [ "$#" -gt 0 ]; do
-	echo $1;
-	args+="$1";
-	shift;
-done
+declare -a args=("$@");
 
-if [ ${#args[@]} -eq 0 ]; then
-	init "$DEFAULT_UI";
+if [[ ${#args[@]} -gt 0 && ${args[0]} != --* ]]; then
+	declare -l ui_arg="${args[0]}"
+
+	# Check if the UI script exists
+	if [ -f "$START_DIR/aurutilsinstaller/ui/$ui_arg.sh" ]; then
+		install "$ui_arg"
+	else
+		printf "'%s' is not an option.\n" "$ui_arg";
+	fi
+
+else
+	printf "Usage:\n%s\n" "$0 <interface> [option]"
+	cd "$START_DIR/aurutilsinstaller/ui"
+	printf "\nInterfaces:\n%s\n" "$(find . -name "*.sh" -exec basename {} .sh \;)";
+	exit 1
+
 fi
+printf " Exiting.\n"

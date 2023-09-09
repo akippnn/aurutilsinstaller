@@ -8,11 +8,11 @@ _confirm() {
 		--title "$1" \
 		--yes-label "Y:Confirm" \
 		--no-label "N:Cancel" \
-		--yesno "$2" "$LINES" "$COLS" \
+		--yesno "$2" 8 78 \
 		&& return 0 || return 1;
 }
 
-_checklist() {
+_multiselect() {
 	local -n selected=$1 && shift || return 1;
 	local title="$1" && shift;
 	local counter=0;
