@@ -1,0 +1,40 @@
+# CMake build and output directories
+/build/
+/CMakeFiles/
+/CMakeScripts/
+/CMakeCache.txt
+/CMakeCache/
+/CMakeScripts/
+/*.cmake
+/*.make
+/*.txt
+/CMakeDoxyfile.in
+/CMakeDoxygenDefaults.cmake
+/CMakeTmp/
+
+# Compiled binary files (if applicable)
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.out
+
+# Dependency directories
+/deps/
+
+# Editor-specific temporary/backup files
+*~
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Ignore user-specific settings files
+CMakeUserPresets.json
+CMakeUserPresets.cache
+
+# Exception: Exclude CMakeLists.txt from the *.txt rule
+!CMakeLists.txt
