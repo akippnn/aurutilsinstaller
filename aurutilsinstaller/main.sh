@@ -3,11 +3,8 @@
 source "$PWD/aurutilsinstaller/parser.sh";
 source "$PWD/aurutilsinstaller/interface.sh";
 
-LINES=$(tput lines);
-COLUMNS=$(tput cols);
 INSTALLER_TITLE='aurutilsinstaller';
 START_DIR="$PWD"
-DEFAULT_UI='dialog';
 
 trace() {
 	((trace_num++));
@@ -17,47 +14,63 @@ trace() {
 
 fetch_files() {
 	local -n file_arr=$1 || return 1;
+	
 	for file in "$START_DIR"/aurutilsinstaller/$2/*; do
 		file_arr+=("$file")
 	done
-	trace
 }
 
-fetch_scripts() {
-	local -n script_arr=$1 && shift || return 1;
-	local -a return_file_arr;
-	fetch_files return_file_arr "scripts";
-	for file in ${return_file_arr[@]}; do
-		local parsed;
-		local -a lines;
-		local -i count=0;
-		while IFS= read -r line; do
-			if [[ "$line" =~ "#% "* ]]; then
-				line=${line#"#% "};
-				lines+=("$line");
-			fi
-		done < "$file"
-		# Function of parser.sh used here
-		parse parsed 'desc' "${lines[@]}"
-		echo "${parsed}"
-		script_arr+=("$(basename "$file" .sh)" "${parsed}")
-	done
+fetch_script_info() {
+	local -n script_info=$1 || return 1;
+	local file="$2";
+
+	local -a lines;
+	local -i found_pattern=0
+
+	while IFS= read -r line; do
+		printf "\n%s" "$line";
+		if [[ "$line" =~ "#% "* ]]; then
+			found_pattern=1;
+			line=${line#"#% "};
+			lines+=("$line");
+		elif [[ "$found_pattern" -eq 1 ]]; then
+			break; # Break the loop (efficiency needs)
+		fi
+	done < "$file"
+
+	# Function of parser.sh used here
+	script_info['file']="$(basename $file .sh)";
+	parse script_info 'info' "${lines[@]}";
 } 
 
 install() {
-	local -a items;
+	local -a files;
 	local -a run;
+	local -A items;
 
-	fetch_scripts items;
+	fetch_files files 'scripts';
+	for file in "${files[@]}"; do
+		local -A arr;
+		fetch_script_info arr "$file"
+		declare -p arr
+		for key in "${!arr[@]}"; do
+			if [[ "$key" != 'file' ]]; then
+				items["${arr['file']}"]+="<|$key|>${arr["$key"]}";
+			fi
+		done
+		unset arr;
+	done
 
+	declare -p items
+	trace
 	# Functions of interface.sh used here
 	multiselect run "$1" "$INSTALLER_TITLE" "${items[@]}";
-	if [ -z "$run" ]; then
+	if [[ -z "$run" ]]; then
 		printf "Script to run not returned by %s." "$1";
 		return 1;
 	fi
 
-	for script in "${run}"; do
+	for script in "${run[@]}"; do
 		warnings=();
 		source "$START_DIR/aurutilsinstaller/scripts/$script.sh";
 		init;
@@ -93,7 +106,7 @@ if [[ ${#args[@]} -gt 0 && ${args[0]} != --* ]]; then
 	declare -l ui_arg="${args[0]}"
 
 	# Check if the UI script exists
-	if [ -f "$START_DIR/aurutilsinstaller/ui/$ui_arg.sh" ]; then
+	if [[ -f "$START_DIR/aurutilsinstaller/ui/$ui_arg.sh" ]]; then
 		install "$ui_arg"
 	else
 		printf "'%s' is not an option.\n" "$ui_arg";

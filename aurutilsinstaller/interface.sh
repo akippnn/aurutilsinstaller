@@ -1,23 +1,34 @@
 #!/bin/bash
 
 confirm() {
-	# $1 string & shift: interface script to use
-	# $2 string: header
-	# $3 string: array of messages
-	
-	source "$PWD/aurutilsinstaller/ui/$1.sh";
-	_confirm "$2" "$3" || return 1;
+	local interface_script="$1"
+	local header="$2"
+	local -a messages="$3"
+
+	source "$PWD/aurutilsinstaller/ui/$interface_scirpt.sh";
+	_confirm "$header" "$messages" || return 1;
 }
 
 multiselect() {
-	# $1 nameref & shift: return names of options selected
-	# $2 string: interface script to use
-	# $@ array: header, then repeat of ( [0] name, [1] description )
-	
-	local -n user_selected=$1;
-	source "$PWD/aurutilsinstaller/ui/$2.sh";
-	shift 2;
-	_multiselect user_selected "$@" || return 1;
+	local -n selected_option=$1;
+	local interface_script="$2";
+	local header="$3"
+	# $@ array: items ( repeat of [0] tag, [1] item )
+	shift 3;
 
+	source "$PWD/aurutilsinstaller/ui/$interface_script.sh";
+	_multiselect selected_option "$header" "$@" || return 1;
+	return 0;
+}
+
+menu() {
+	local -n selected_option=$1;
+	local interface_script="$2";
+	local header="$3";
+	# $@ array: menu items ( repeat of [0] tag, [1] item )
+	shift 3;
+
+	source "$PWD/aurutilsinstaller/ui/$interface_script.sh";
+	_menu selected_option "$header" "$@" || return 1;
 	return 0;
 }

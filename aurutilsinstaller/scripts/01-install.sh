@@ -1,4 +1,5 @@
 #!/bin/bash
+#% name install-aurutils
 #% desc Install aurutils: Compile and install aurutils inside pkgs
 #% bool offline Install offline?
 
