@@ -1,5 +1,9 @@
 # aurutilsinstaller
 
+> [!IMPORTANT]
+> The development of this small project has been halted indefinitely for some time. I have burned myself out and have been focusing on other personal projects since (such as NixOS) as well as personal matters. Though it doesn't seem hopeful that I can come back to this. If you'd like to contribute then feel free to fork and maybe a PR as well, thank you :').  
+> \- aki
+
 Deploy aurutils using `bash` (and optionally `dialog`), both part of Arch Linux's Core repository, with an offline fallback using git submodules.
 
 This repository comes with scripts and dependencies required to abstract multiple modes of setup for aurutils. Both GUI and commands (using flags) are provided for the beginners to navigate through the installation.
